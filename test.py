@@ -25,4 +25,4 @@ jan_2010_crimes = crime.filter((year("DATE OCC") == 2010) & (month("DATE OCC") =
 
 total_crimes_jan_2010 = jan_2010_crimes.count()
 
-print("Total crimes in January 2010:", total_crimes_jan_2010)
+print("Total crimes in January 2010!:", total_crimes_jan_2010)
