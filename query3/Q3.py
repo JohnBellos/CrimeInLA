@@ -88,6 +88,7 @@ for letter, word in descent_mapping.items():
 # Grouping by Vict Descent, counting the victims and getting the results in desc 
 rich_victims = top_3_victims.groupBy("Vict Descent").agg(count("*").alias("#")).orderBy(col("#").desc())
 rich_victims = rich_victims.withColumnRenamed("Vict Descent", "Victim Descent")
+
 poor_victims = bottom_3_victims.groupBy("Vict Descent").agg(count("*").alias("#")).orderBy(col("#").desc())
 poor_victims = poor_victims.withColumnRenamed("Vict Descent", "Victim Descent")
 

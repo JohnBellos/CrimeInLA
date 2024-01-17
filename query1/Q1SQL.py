@@ -8,7 +8,8 @@ spark = SparkSession \
     .getOrCreate()
 
 # Reading the basic dataset and creating the schema
-crime = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
+crime = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", 
+                        "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
 
 crime_sql = crime.select(
     to_date(col("Date Rptd"), 'MM/dd/yyyy hh:mm:ss a').alias("Date Rptd"),
@@ -25,7 +26,10 @@ crime_sql.createOrReplaceTempView("crimes")
 query1 = """
     SELECT Year AS year, Month AS month, Count as crime_total, Rank AS `#`
         FROM ( 
-            SELECT Year, Month, Count, RANK() OVER (PARTITION BY Year ORDER BY Count DESC) AS Rank FROM (SELECT YEAR(`DATE OCC`) AS Year, MONTH(`DATE OCC`) AS Month, COUNT(*) AS Count
+            SELECT Year, Month, Count, RANK() OVER (PARTITION BY Year ORDER BY Count DESC) 
+            AS Rank FROM (SELECT YEAR(`DATE OCC`) 
+            AS Year, MONTH(`DATE OCC`) AS Month, 
+            COUNT(*) AS Count
             FROM crimes
             GROUP BY Year, Month
             )
