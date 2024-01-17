@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, IntegerType, FloatType, StringType, DateType, DoubleType
-from pyspark.sql.functions import col, to_date, year, month, count, rank, regexp_replace, format_number, when 
+from pyspark.sql.types import IntegerType, StringType, DoubleType, DateType
+from pyspark.sql.functions import col, to_date, year, count, regexp_replace, when 
 
 spark = SparkSession \
         .builder \
@@ -14,48 +14,15 @@ income_2k15 = spark.read.csv("hdfs://okeanos-master:54310/data/LA_income_2015.cs
 income_2k15 = income_2k15.filter(col("Community").like("Los Angeles%"))
 
 # Removing dollar signs and commas, and casting the column to DoubleType for sorting
-income_clean = income_2k15.withColumn("Estimated Median Income", regexp_replace(col("Estimated Median Income"), "[^0-9.]", "").cast(DoubleType()))
-
-# Keeping only the zipcodes for the 3 richest 
-top_3_zipcodes = income_clean.sort(col("Estimated Median Income").desc()).select("Zip Code").limit(3)
-
-# Keeping only the zipcodes for the 3 poorest 
-bottom_3_zipcodes = income_clean.sort(col("Estimated Median Income")).select("Zip Code").limit(3)
+income = income_2k15.withColumn("Estimated Median Income", regexp_replace(col("Estimated Median Income"), "[^0-9.]", "").cast(DoubleType()))
 
 # Reading the reverse geocoding dataset
 rev_geo = spark.read.csv("hdfs://okeanos-master:54310/data/revgecoding.csv", header=True)
 
-top_3_geo = top_3_zipcodes.join(
-    rev_geo.hint("BROADCAST"),  # or hint("MERGE") / hint("SHUFFLE_HASH") / hint("SHUFFLE_REPLICATE_NL")
-    top_3_zipcodes["Zip Code"] == rev_geo["ZIPcode"],
-    how="inner"
-)
+# Reading the basic dataset and creating a dataframe 
+crime_2015 = spark.read.csv("hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", header=True)
 
-bottom_3_geo = bottom_3_zipcodes.join(
-    rev_geo.hint("BROADCAST"),  # or hint("MERGE") / hint("SHUFFLE_HASH") / hint("SHUFFLE_REPLICATE_NL")
-    bottom_3_zipcodes["Zip Code"] == rev_geo["ZIPcode"],
-    how="inner"
-)
-
-# Keeping only LAT, LON columns 
-top_3_geo = top_3_geo.select("LAT", "LON")
-bottom_3_geo = bottom_3_geo.select("LAT", "LON")
-
-# # Get the execution plan text
-# top_3_geo.explain()
-# bottom_3_geo.explain()
-
-# Prints for debugging 
-# print("Joined data ZIP codes --> LAT, LON for the rich")
-# top_3_geo.show(top_3_geo.count())
-
-# print("Joined data ZIP codes --> LAT, LON for the poor")
-# bottom_3_geo.show(bottom_3_geo.count())
-
-# Reading the basic dataset
-crime = spark.read.csv("hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", header=True)
-
-crime_2015 = crime.select(
+crime_2015 = crime_2015.select(
     to_date(col("DATE OCC"), "MM/dd/yyyy hh:mm:ss a").alias("DATE OCC").cast(DateType()),
     col("LAT").cast(DoubleType()),
     col("LON").cast(DoubleType()),
@@ -64,31 +31,30 @@ crime_2015 = crime.select(
 
 # We only need 2015 data
 crime_2015 = crime_2015.filter(year("DATE OCC") == 2015)
-
 crime_vics = crime_2015.select("LAT", "LON", "Vict Descent")
 
 # Filtering out the victimless crimes 
-crime_vics = crime_vics.na.drop(subset=["Vict Descent"])
+crime_vics = crime_vics.filter(col("Vict Descent").isNotNull())
 
-# crime_vics.show()
+# Joining REVGEO + CRIME on lat and lon 
+join1 = crime_vics.join(rev_geo,on=["LAT", "LON"], how="inner")
+join1 = join1.withColumnRenamed("ZIPcode", "Zip Code")
 
-top_3_join = crime_vics.join(
-    top_3_geo,
-    (crime_vics["LAT"] == top_3_geo["LAT"]) & (crime_vics["LON"] == top_3_geo["LON"]),
-    "inner"
-)
+# Joining JOIN1 + INCOME on zip codes 
+join2 = income.join(join1.select("Zip Code"), on="Zip Code", how="inner")
+join2 = join2.drop_duplicates(subset=['Zip Code'])
 
-bottom_3_join = crime_vics.join(
-    bottom_3_geo,
-    (crime_vics["LAT"] == bottom_3_geo["LAT"]) & (crime_vics["LON"] == bottom_3_geo["LON"]),
-    "inner"
-)
+# Order by ZIP CODES and keep top3 & bottom3
+top3zip = join2.orderBy(col("Estimated Median Income").desc()).limit(3)
+bottom3zip = join2.orderBy(col("Estimated Median Income")).limit(3)
 
-top_3_victims = top_3_join.select("Vict Descent")
-bottom_3_victims = bottom_3_join.select("Vict Descent")
+# Joining JOIN1 + vics
+top3 = join1.join(top3zip, on=["Zip Code"], how="inner")
+bottom3 = join1.join(bottom3zip, on=["Zip Code"], how="inner")
 
-# top_3_victims.show(top_3_victims.count())
-# bottom_3_victims.show(bottom_3_victims.count())
+# Selecting only Vict Descent column 
+top_3_victims = top3.select("Vict Descent")
+bottom_3_victims = bottom3.select("Vict Descent")
 
 # Mapping the letters in Vict Descent
 descent_mapping = {
@@ -119,11 +85,15 @@ for letter, word in descent_mapping.items():
 for letter, word in descent_mapping.items():
     bottom_3_victims = bottom_3_victims.withColumn("Vict Descent", when(col("Vict Descent") == letter, word).otherwise(col("Vict Descent")))
 
+# Grouping by Vict Descent, counting the victims and getting the results in desc 
 rich_victims = top_3_victims.groupBy("Vict Descent").agg(count("*").alias("#")).orderBy(col("#").desc())
 rich_victims = rich_victims.withColumnRenamed("Vict Descent", "Victim Descent")
-
 poor_victims = bottom_3_victims.groupBy("Vict Descent").agg(count("*").alias("#")).orderBy(col("#").desc())
 poor_victims = poor_victims.withColumnRenamed("Vict Descent", "Victim Descent")
 
+# Printing the final results for each group 
+print("Rich victims")
 rich_victims.show()
+
+print("Poor victims")
 poor_victims.show()
