@@ -1,10 +1,10 @@
 from pyspark.sql import SparkSession, Window
-from pyspark.sql.types import StructType, StructField, IntegerType, FloatType, StringType, DateType, DoubleType
-from pyspark.sql.functions import col, to_date, year, month, count, rank, regexp_replace, format_number, when, lit, udf, avg, round, row_number
+from pyspark.sql.types import IntegerType, StringType, DoubleType
+from pyspark.sql.functions import col, to_date, year, count, udf, avg, round, row_number
 from math import radians, sin, cos, sqrt, atan2
 
-# Define the Haversine formula as a UDF
-def haversine_udf(lat1, lon1, lat2, lon2):
+# Defining our own function using the Haversine formula 
+def get_distance_udf(lat1, lon1, lat2, lon2):
     R = 6371.0  # Earth's radius in kilometers
 
     lat1 = radians(lat1)
@@ -22,7 +22,7 @@ def haversine_udf(lat1, lon1, lat2, lon2):
 
     return distance
 
-# Initialize SparkSession
+# Initializing SparkSession
 spark = SparkSession \
         .builder \
         .appName("Query 4 with DataFrame API") \
@@ -55,9 +55,6 @@ crime_df = crime_df.select(
 # Filtering out the Null Island 
 crimes_df = crime_df.filter((col("LAT") != 0) & (col("LON") != 0) & col("Weapon Used Cd").isNotNull())
 
-# crimes_df.show()
-# print(crimes_df.count())
-
 # Reading the dataset with the precincts  
 LAPD_stations = spark.read.csv("hdfs://okeanos-master:54310/data/LAPD_Police_Stations.csv", header=True)
 
@@ -71,30 +68,19 @@ stations_df = LAPD_stations.select(
     col("PREC").cast(StringType())
 )
 
-# stations_df.show()
-
-
-# Define the UDF
-haversine_udf = udf(haversine_udf, DoubleType())
+# Defining the UDF
+get_distance_udf = udf(get_distance_udf, DoubleType())
 
 # Joining the 2 datasets 
 join2 = crimes_df.crossJoin(stations_df).withColumn(
-    "Distance", haversine_udf(col("lat"), col("lon"), col("y"), col("x"))
+    "Distance", get_distance_udf(col("lat"), col("lon"), col("y"), col("x"))
 ) 
 
-# join2.show()
-
-# Use window function to find the nearest police station for each crime
+# Using window function to find the nearest police station for each crime
 windowSpec = Window.partitionBy("DR_NO").orderBy("Distance")
 join2 = join2.withColumn("rn", row_number().over(windowSpec)).filter(col("rn") == 1).drop("rn")
 
-# Format the Distance column to three decimal places
-join2 = join2.withColumn("Distance", format_number(col("Distance").cast(DoubleType()), 3))
-
-# Show the resulting DataFrame
-# join2.show()
-
-# Group by year and calculate count of crimes and average distance
+# Grouping by year and calculate count of crimes and average distance
 res2 = join2.groupBy("division") \
     .agg(
         round(avg("Distance"), 3).alias("average_distance"),
@@ -102,4 +88,5 @@ res2 = join2.groupBy("division") \
     ) \
     .orderBy("division")
 
+# Showing the resulting DataFrame
 res2.show()

@@ -1,10 +1,10 @@
 from pyspark.sql import SparkSession, Window
-from pyspark.sql.types import StructType, StructField, IntegerType, FloatType, StringType, DateType, DoubleType
-from pyspark.sql.functions import col, to_date, year, month, count, rank, regexp_replace, format_number, when, lit, udf, avg, round, row_number
+from pyspark.sql.types import IntegerType, StringType, DoubleType
+from pyspark.sql.functions import col, to_date, year, count, udf, avg, round, row_number
 from math import radians, sin, cos, sqrt, atan2
 
-# Define the Haversine formula as a UDF
-def haversine_udf(lat1, lon1, lat2, lon2):
+# Defining our own function using the Haversine formula 
+def get_distance_udf(lat1, lon1, lat2, lon2):
     R = 6371.0  # Earth's radius in kilometers
 
     lat1 = radians(lat1)
@@ -23,10 +23,10 @@ def haversine_udf(lat1, lon1, lat2, lon2):
     return distance
 
 
-# Initialize SparkSession
+# Initializing SparkSession
 spark = SparkSession \
         .builder \
-        .appName("Query 4 with DataFrame API") \
+        .appName("Query 4)2a with DataFrame API") \
         .getOrCreate()
 
 # Reading the basic dataset 
@@ -56,9 +56,6 @@ crime_df = crime_df.select(
 # Filtering out the Null Island and keeping only firearms :')
 crimes_df = crime_df.filter((col("LAT") != 0) & (col("LON") != 0) & (col("Weapon Used Cd").startswith("1")))
 
-# crimes_df.show()
-# print(crimes_df.count())
-
 # Reading the dataset with the precincts  
 LAPD_stations = spark.read.csv("hdfs://okeanos-master:54310/data/LAPD_Police_Stations.csv", header=True)
 
@@ -72,35 +69,20 @@ stations_df = LAPD_stations.select(
     col("PREC").cast(StringType())
 )
 
-# stations_df.show()
+# Defining the UDF
+get_distance_udf = udf(get_distance_udf, DoubleType())
 
-#### not that. Just add a column that shows the nearest. From udf
-# Joining the 2 datasets 
-'''
-join1 = crimes_df.join(
-    stations_df,
-    (crime_df["AREA"] == stations_df["PREC"]),
-    "inner"
-)
-'''
-
-# Define the UDF
-haversine_udf = udf(haversine_udf, DoubleType())
-# nearest_udf = udf(nearest_udf, StringType())
-
-# Calculate distances between each crime and each police station
+# Just add a column that shows the nearest. From udf
+# Calculating distances between each crime and each police station
 distance_df = crimes_df.crossJoin(stations_df).withColumn(
-    "Distance", haversine_udf(col("lat"), col("lon"), col("y"), col("x"))
+    "Distance", get_distance_udf(col("lat"), col("lon"), col("y"), col("x"))
 ) 
 
-# Use window function to find the nearest police station for each crime
+# Using window function to find the nearest police station for each crime
 windowSpec = Window.partitionBy("DR_NO").orderBy("Distance")
 nearestStationDF = distance_df.withColumn("rn", row_number().over(windowSpec)).filter(col("rn") == 1).drop("rn")
 
-# Show the resulting DataFrame
-# nearestStationDF.show()
-
-# Group by year and calculate count of crimes and average distance
+# Grouping by year and calculate count of crimes and average distance
 res1 = nearestStationDF.groupBy("year") \
     .agg(
         round(avg("Distance"), 3).alias("average_distance"),
@@ -108,6 +90,5 @@ res1 = nearestStationDF.groupBy("year") \
     ) \
     .orderBy("year")
 
-# Show the resulting DataFrame
+# Showing the resulting DataFrame
 res1.show()
-
