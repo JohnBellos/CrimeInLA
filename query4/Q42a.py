@@ -30,7 +30,8 @@ spark = SparkSession \
         .getOrCreate()
 
 # Reading the basic dataset 
-crime = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
+crime = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", 
+                        "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
 
 # Keeping what we need :)
 crime_df = crime.select(
