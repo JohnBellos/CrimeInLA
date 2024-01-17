@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, IntegerType, FloatType, StringType, DateType, DoubleType
+from pyspark.sql.types import IntegerType, StringType, DoubleType
 from pyspark.sql.functions import col, to_date, year, month, count, rank
 
 spark = SparkSession \
@@ -7,15 +7,12 @@ spark = SparkSession \
     .appName("Query 1 with SQL API") \
     .getOrCreate()
 
-# Date format !!!
-date_format = 'MM/dd/yyyy hh:mm:ss a'
-
 # Reading the basic dataset and creating the schema
 crime = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
 
 crime_sql = crime.select(
-    to_date(col("Date Rptd"), date_format).alias("Date Rptd"),
-    to_date(col("DATE OCC"), date_format).alias("DATE OCC"),
+    to_date(col("Date Rptd"), 'MM/dd/yyyy hh:mm:ss a').alias("Date Rptd"),
+    to_date(col("DATE OCC"), 'MM/dd/yyyy hh:mm:ss a').alias("DATE OCC"),
     col("Vict Age").cast(IntegerType()).alias("Vict Age"),
     col("LAT").cast(DoubleType()).alias("LAT"),
     col("LON").cast(DoubleType()).alias("LON"),
