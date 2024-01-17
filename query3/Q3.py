@@ -20,7 +20,8 @@ income = income_2k15.withColumn("Estimated Median Income", regexp_replace(col("E
 rev_geo = spark.read.csv("hdfs://okeanos-master:54310/data/revgecoding.csv", header=True)
 
 # Reading the basic dataset and creating a dataframe 
-crime_2015 = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
+crime_2015 = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", 
+                            "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
 
 crime_2015 = crime_2015.select(
     to_date(col("DATE OCC"), "MM/dd/yyyy hh:mm:ss a").alias("DATE OCC").cast(DateType()),
