@@ -20,7 +20,8 @@ income = income_2k15.withColumn("Estimated Median Income", regexp_replace(col("E
 rev_geo = spark.read.csv("hdfs://okeanos-master:54310/data/revgecoding.csv", header=True)
 
 # Reading the basic dataset and creating a dataframe 
-crime_2015 = spark.read.csv("hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", header=True)
+crime_2015 = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv",
+                        "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
 
 crime_2015 = crime_2015.select(
     to_date(col("DATE OCC"), "MM/dd/yyyy hh:mm:ss a").alias("DATE OCC").cast(DateType()),
@@ -48,7 +49,7 @@ join2 = join2.drop_duplicates(subset=['Zip Code'])
 top3zip = join2.orderBy(col("Estimated Median Income").desc()).limit(3)
 bottom3zip = join2.orderBy(col("Estimated Median Income")).limit(3)
 
-# Joining JOIN1 + vics
+# Joining JOIN1 + zips
 top3 = join1.join(top3zip, on=["Zip Code"], how="inner")
 bottom3 = join1.join(bottom3zip, on=["Zip Code"], how="inner")
 
@@ -88,6 +89,7 @@ for letter, word in descent_mapping.items():
 # Grouping by Vict Descent, counting the victims and getting the results in desc 
 rich_victims = top_3_victims.groupBy("Vict Descent").agg(count("*").alias("#")).orderBy(col("#").desc())
 rich_victims = rich_victims.withColumnRenamed("Vict Descent", "Victim Descent")
+
 poor_victims = bottom_3_victims.groupBy("Vict Descent").agg(count("*").alias("#")).orderBy(col("#").desc())
 poor_victims = poor_victims.withColumnRenamed("Vict Descent", "Victim Descent")
 
