@@ -28,9 +28,6 @@ rdd2 = sqlContext.read.format("com.databricks.spark.csv") \
 rdd = rdd1.union(rdd2)
 
 rdd = rdd.filter(lambda row: row[15] == 'STREET')
-# Show the DataFrame
-# df.show()
-print(rdd.take(3))
 
 # Define a function to categorize the time into periods
 def categorize_time(row):
