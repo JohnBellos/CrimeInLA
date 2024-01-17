@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, IntegerType, FloatType, StringType, DateType, DoubleType
+from pyspark.sql.types import IntegerType, FloatType, StringType, DateType, DoubleType
 from pyspark.sql.functions import col, udf, desc
 
 
@@ -8,7 +8,8 @@ spark = SparkSession \
         .appName("Query 2 with DataFrame API") \
         .getOrCreate()
 
-crime = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
+crime = spark.read.csv(["hdfs://okeanos-master:54310/data/crime-data-from-2010-to-2019.csv", 
+                        "hdfs://okeanos-master:54310/data/crime-data-from-2020-to-present.csv"], header=True)
 
 crime = crime.filter(col("Premis Desc") == "STREET")
 
