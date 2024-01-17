@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import IntegerType, StringType, DoubleType
+from pyspark.sql.types import IntegerType, StringType, DoubleType, DateType
 from pyspark.sql.functions import col, to_date, year, count, regexp_replace, when 
 
 spark = SparkSession \
