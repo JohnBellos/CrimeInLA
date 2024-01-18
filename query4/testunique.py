@@ -18,6 +18,8 @@ if is_DR_NO_unique:
     print("The 'DR_NO' column is unique.")
 else:
     print("The 'DR_NO' column is not unique.")
+    print(df.count())
+    print(df.select("DR_NO").distinct().count())
 
 # Stop the Spark session
 spark.stop()
