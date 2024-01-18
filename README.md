@@ -32,7 +32,7 @@ Before running the scripts, ensure that you have the following prerequisites:
 
 Follow these steps to run the scripts (for instance Query 1 with DataFrame API):
 
-Clone this repository:
+Clone this repository and execute the following commands:
    ```bash
    git clone https://github.com/ntua-el19613/CrimeInLA
    cd CrimeInLA
