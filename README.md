@@ -32,9 +32,23 @@ Before running the scripts, ensure that you have the following prerequisites:
 
 Follow these steps to run the scripts (for instance Query 1 with DataFrame API):
 
-Clone this repository and execute the following commands:
+1. **Clone this repository:**
    ```bash
    git clone https://github.com/ntua-el19613/CrimeInLA
    cd CrimeInLA
+   ```
+2. **Navigate to the specific query folder:**
+   ```bash
    cd query1
-   spark-submit Q1DF.py 
+   ```
+3. **Submit the Spark job for Query 1 with DataFrame API:**
+   ```bash
+   spark-submit Q1DF.py
+   ```
+
+## Contributors
+
+This project was a team effort by the following contributors:
+
+- Giannouchou Olga (03119613)
+- Bellos Ioannis (03119067)
