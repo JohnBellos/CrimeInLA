@@ -6,6 +6,9 @@ This project involves analyzing crime data in Los Angeles using Apache Spark. It
 
 ## Installation Requirements
 
+You can check out this setup guide provided by our professors: 
+- [Setup guide](https://colab.research.google.com/drive/1eE5FXf78Vz0KmBK5W8d4EUvEFATrVLmr?usp=drive_link)
+
 Before running the scripts, ensure that you have the following prerequisites:
 
 1. **Cluster Setup:**
@@ -27,9 +30,11 @@ Before running the scripts, ensure that you have the following prerequisites:
 
 ## Running the Scripts
 
-Follow these steps to run the scripts:
+Follow these steps to run the scripts (for instance Query 1 with DataFrame API):
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/your-username/crime-analysis-la.git
-   cd crime-analysis-la
+   git clone https://github.com/ntua-el19613/CrimeInLA
+   cd CrimeInLA
+   cd query1
+   spark-submit Q1DF.py 
