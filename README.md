@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project involves analyzing crime data in Los Angeles using Apache Spark. It includes queries implemented in both DataFrame and SQL APIs.
+This project involves analyzing crime data in Los Angeles using Apache Spark. It includes queries implemented in DataFrame, RDD and SQL APIs.
 
 ## Installation Requirements
 
@@ -32,7 +32,7 @@ Before running the scripts, ensure that you have the following prerequisites:
 
 Follow these steps to run the scripts (for instance Query 1 with DataFrame API):
 
-1. Clone this repository:
+Clone this repository:
    ```bash
    git clone https://github.com/ntua-el19613/CrimeInLA
    cd CrimeInLA
