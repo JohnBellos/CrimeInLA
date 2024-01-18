@@ -23,7 +23,7 @@ Before running the scripts, ensure that you have the following prerequisites:
      - [Crime Data from 2010 to 2019](https://catalog.data.gov/dataset/crime-data-from-2010-to-2019)
      - [Crime Data from 2020 to Present](https://catalog.data.gov/dataset/crime-data-from-2020-to-present)
    - Download income 2015 dataset and reverse geocoding dataset:
-     - [Data Tarball](http://www.dblab.ece.ntua.gr/files/classes/data.tar.gz)
+     - [Data by DBLAB NTUA](http://www.dblab.ece.ntua.gr/files/classes/data.tar.gz)
 
 4. **Store Datasets in HDFS:**
    - Store downloaded datasets in the HDFS of your machine.
