@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession, Window
 from pyspark.sql.types import IntegerType, StringType, DoubleType
-from pyspark.sql.functions import col, to_date, year, count, udf, avg, round, row_number
+from pyspark.sql.functions import col, to_date, year, count, udf, avg, round, row_number, monotonically_increasing_id
 from math import radians, sin, cos, sqrt, atan2
 
 # Defining our own function using the Haversine formula 
@@ -56,6 +56,8 @@ crime_df = crime_df.select(
 # Filtering out the Null Island 
 crimes_df = crime_df.filter((col("LAT") != 0) & (col("LON") != 0) & col("Weapon Used Cd").isNotNull())
 
+crimes_df = crimes_df.withColumn("id", monotonically_increasing_id())
+
 # Reading the dataset with the precincts  
 LAPD_stations = spark.read.csv("hdfs://okeanos-master:54310/data/LAPD_Police_Stations.csv", header=True)
 
@@ -78,7 +80,7 @@ join2 = crimes_df.crossJoin(stations_df).withColumn(
 ) 
 
 # Using window function to find the nearest police station for each crime
-windowSpec = Window.partitionBy("DR_NO").orderBy("Distance")
+windowSpec = Window.partitionBy("id").orderBy("Distance")
 join2 = join2.withColumn("rn", row_number().over(windowSpec)).filter(col("rn") == 1).drop("rn")
 
 # Grouping by year and calculate count of crimes and average distance
